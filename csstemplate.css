@@ -7,7 +7,7 @@
 
 /* Felder rechts und links. Farbanpassung hier!  */
 .contentmeinung {
-  background-image: linear-gradient(to right, #f6cece 50%, #d8f6ce 50%);
+  background-image: linear-gradient(to right, #F1ACAC 50%, #A3E1B4 50%);
   width: 100%;
   margin: 0 auto;
   border-radius: 10px;
@@ -16,13 +16,13 @@
 /* Überschrift links. Farbanpassung hier!  */
 .obenlinks {
   font-size: 2em;
-  color: #fa5858;
+  color: #000000;
 }
 
 /* Überschrift rechts. Farbanpassung hier!  */
 .obenrechts {
   font-size: 2em;
-  color: #04b45f;
+  color: #000000;
 }
 
 .kasten {
