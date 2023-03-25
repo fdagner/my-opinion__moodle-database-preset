@@ -12,7 +12,7 @@ Download the source code and zip the files WITHOUT parent folder. Create a "Data
 
 ## Language Support
 
-The preset is available in German. 
+The preset is available in German, but there is not so much to translate. The template can easily be adapted.
 
 ## Screenshots
 
