@@ -1,0 +1,188 @@
+/*
+ * Datenbankvorlage Meinungslinie
+* Version 1.2
+ * @Autor 2021 Florian Dagner
+ * @license CC0 Public Domain Dedication
+ */
+
+/* Felder rechts und links. Farbanpassung hier!  */
+.contentmeinung {
+  background-image: linear-gradient(to right, #f6cece 50%, #d8f6ce 50%);
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 10px;
+}
+
+/* Überschrift links. Farbanpassung hier!  */
+.obenlinks {
+  font-size: 2em;
+  color: #fa5858;
+}
+
+/* Überschrift rechts. Farbanpassung hier!  */
+.obenrechts {
+  font-size: 2em;
+  color: #04b45f;
+}
+
+.kasten {
+  margin: 0 auto;
+  width: 80%;
+}
+
+.oben {
+  display: flex;
+  margin: 0 auto;
+  width: 98%;
+}
+
+.querformat {
+  margin-left: -25%;
+}
+
+.linie {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.linie hr {
+  height: 1px;
+  background-color: #fff;
+  border: none;
+}
+
+.meinung {
+  position: relative;
+  text-align: center;
+  width: 20%;
+  background: #fff;
+  opacity: 0.8;
+  border: 2px solid #f5f5f5;
+  border-radius: 10px 10px 10px 10px;
+  padding: 5px;
+  z-index: 0;
+}
+
+.nummer {
+  display: none;
+}
+
+/* Anpassung für Hochformat und kleinere Bildschirme  */
+@media print,
+  screen and (max-width: 769px),
+  screen and (orientation: portrait) {
+  .contentmeinung {
+    width: 100%;
+  }
+
+  .kasten {
+    width: 100%;
+  }
+
+  .meinung {
+    width: 100%;
+    margin: 0 auto !important;
+    text-align: left;
+  }
+
+  .obenlinks {
+    font-size: 1.1em;
+  }
+
+  .querformat {
+    margin-left: 0px;
+  }
+
+  .obenrechts {
+    font-size: 1.1em;
+  }
+
+  .nummer {
+    display: inline;
+    font-size: 20px;
+    border-bottom: 2px solid #ff00ed;
+  }
+}
+
+/* Blinkender Pfeil  */
+.nav-tabs a[href*="edit"]::before {
+  content: "  ▶ ";
+  animation: opacity 1s ease-in-out infinite;
+  opacity: 1;
+}
+
+@keyframes opacity {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Menü bei den Einträgen  */
+.dropdown-menu {
+  z-index: 2;
+}
+
+.dropdown-menu .icon.fa.fa-search-plus.fa-fw::after {
+  content: " Einzelansicht";
+  font-family: "Titillium Web", Arial, sans-serif;
+}
+
+.dropdown-menu .icon.fa.fa-cog.fa-fw::after {
+  content: " Bearbeiten";
+  font-family: "Titillium Web", Arial, sans-serif;
+}
+
+.dropdown-menu .icon.fa.fa-trash.fa-fw::after {
+  content: " Löschen";
+  font-family: "Titillium Web", Arial, sans-serif;
+}
+
+.dropdown-menu .icon.fa.fa-ban.fa-fw.iconsmall::after {
+  content: " Nicht freigeben";
+  font-family: "Titillium Web", Arial, sans-serif;
+}
+
+.dropdown-menu .icon.fa.fa-thumbs-up.fa-fw.iconsmall::after {
+  content: " Zulassen";
+  font-family: "Titillium Web", Arial, sans-serif;
+}
+
+.dropdown-item:empty {
+  display: none;
+}
+
+/* Style für Druck  */
+@media print {
+  /* Not displayed in print version. */
+  #page-header,
+  #page-footer,
+  .intro,
+  .nav-tabs,
+  .datapreferences,
+  .btn-secondary,
+  i.icon,
+  .comment-area,
+  .pagination,
+  input,
+  .activity-navigation,
+  .activity-information,
+  .fixed-top,
+  .container,
+  .mbsmenubar,
+  .top-bar,
+  #me-wrapper,
+  .body img,
+  #mbsmenubar,
+  #mebis-footer,
+#menu-sidebar-menu,
+  .row {
+    display: none;
+    background: none;
+  }
+}
