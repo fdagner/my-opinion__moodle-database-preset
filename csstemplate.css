@@ -61,6 +61,7 @@
   border-radius: 10px 10px 10px 10px;
   padding: 5px;
   z-index: 0;
+  color: #000;
 }
 
 .nummer {
@@ -104,28 +105,10 @@
   }
 }
 
-/* Blinkender Pfeil  */
-.nav-tabs a[href*="edit"]::before {
-  content: "  ▶ ";
-  animation: opacity 1s ease-in-out infinite;
-  opacity: 1;
-}
-
-@keyframes opacity {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
 /* Menü bei den Einträgen  */
 .dropdown-menu {
   z-index: 2;
+  color: #000;
 }
 
 .dropdown-menu .icon.fa.fa-search-plus.fa-fw::after {
