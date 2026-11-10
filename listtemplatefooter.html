@@ -9,8 +9,8 @@
 (function () {
   'use strict';
 
-  /** Vertical spacing (px) between two stacked entries on the same position. */
-  var STEP = 220;
+  /** Minimal vertical gap (px) between stacked entries. */
+  var STACK_GAP = 24;
   /** Horizontal padding (px) used during collision detection. */
   var PADDING = 12;
   /** Base height (px) of the seesaw container with no extra drop. */
@@ -53,7 +53,7 @@
 
     if (isPortraitLayout()) {
       // Portrait layout stacks entries naturally, no staggering needed
-      for (var m = 0; m < entries.length; m++) entries[m].style.removeProperty('--tier');
+      for (var m = 0; m < entries.length; m++) entries[m].style.removeProperty('--stack-bottom');
       track.style.minHeight = '';
       updateSeesaw(entries);
       return;
@@ -61,27 +61,39 @@
 
     if (!entries.length) return;
 
-    for (var i = 0; i < entries.length; i++) entries[i].style.removeProperty('--tier');
+    for (var i = 0; i < entries.length; i++) entries[i].style.removeProperty('--stack-bottom');
 
-    // offsetLeft/Width read layout once per entry without repeated page reflows
+    // Measure each entry once: horizontal extent (offsetLeft/Width) and height
     var measured = entries.map(function (entry) {
-      return { el: entry, left: entry.offsetLeft, right: entry.offsetLeft + entry.offsetWidth };
+      return {
+        el: entry,
+        left: entry.offsetLeft,
+        right: entry.offsetLeft + entry.offsetWidth,
+        height: entry.offsetHeight,
+        stackBottom: 0,
+        top: 0
+      };
     }).sort(function (a, b) { return a.left - b.left; });
 
-    var tiers = [];
-    var maxTier = 0;
+    // Stack x-overlapping entries on top of each other (variable heights)
+    var placed = [];
+    var topmost = 0;
     for (var k = 0; k < measured.length; k++) {
       var item = measured[k];
-      var tier = 0;
-      while (tiers[tier] && tiers[tier].some(function (occupied) {
-        return item.left < occupied.right + PADDING && item.right > occupied.left - PADDING;
-      })) { tier++; }
-      (tiers[tier] = tiers[tier] || []).push({ left: item.left, right: item.right });
-      item.el.style.setProperty('--tier', String(tier));
-      if (tier > maxTier) maxTier = tier;
+      for (var j = 0; j < placed.length; j++) {
+        var occupied = placed[j];
+        var overlapsX = item.left < occupied.right + PADDING && item.right > occupied.left - PADDING;
+        if (overlapsX && item.stackBottom < occupied.top + STACK_GAP) {
+          item.stackBottom = occupied.top + STACK_GAP;
+        }
+      }
+      item.top = item.stackBottom + item.height;
+      placed.push(item);
+      if (item.top > topmost) topmost = item.top;
+      item.el.style.setProperty('--stack-bottom', item.stackBottom + 'px');
     }
 
-    track.style.minHeight = ((maxTier + 1) * STEP + 60) + 'px';
+    track.style.minHeight = (topmost + 60) + 'px';
     updateSeesaw(entries);
   }
 
