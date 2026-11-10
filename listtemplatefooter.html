@@ -1,1 +1,223 @@
-</div></div></div>
+</div>
+<div class="opinion-seesaw" id="opinion-seesaw">
+  <div class="opinion-seesaw__fulcrum"></div>
+  <div class="opinion-seesaw__beam" id="opinion-seesaw-beam"></div>
+  <div class="opinion-seesaw__label" id="opinion-seesaw-label">Gesamtmeinung: –</div>
+</div>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  /** Vertical spacing (px) between two stacked entries on the same position. */
+  var STEP = 220;
+  /** Horizontal padding (px) used during collision detection. */
+  var PADDING = 12;
+  /** Base height (px) of the seesaw container with no extra drop. */
+  var SEESAW_BASE_HEIGHT = 90;
+
+  function getTrack() {
+    return document.getElementById('data-content') || document.getElementById('opinion-track');
+  }
+
+  function getEntries(track) {
+    return Array.prototype.slice.call(track.querySelectorAll('.opinion-entry'));
+  }
+
+  function isPortraitLayout() {
+    return window.matchMedia && (window.matchMedia('(max-width: 769px)').matches || window.matchMedia('(orientation: portrait)').matches);
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  // Hide speech bubbles whose comment is empty
+  function cleanupBubbles(track) {
+    var bubbles = track.querySelectorAll('.opinion-bubble');
+    for (var i = 0; i < bubbles.length; i++) {
+      var textEl = bubbles[i].querySelector('.opinion-bubble__text');
+      var text = textEl ? (textEl.textContent || '') : '';
+      bubbles[i].style.display = (text.trim() === '') ? 'none' : '';
+    }
+  }
+
+  // Stagger stacked entries vertically so they never overlap horizontally
+  function stagger() {
+    var track = getTrack();
+    if (!track) return;
+
+    cleanupBubbles(track);
+
+    var entries = getEntries(track);
+
+    if (isPortraitLayout()) {
+      // Portrait layout stacks entries naturally, no staggering needed
+      for (var m = 0; m < entries.length; m++) entries[m].style.removeProperty('--tier');
+      track.style.minHeight = '';
+      updateSeesaw(entries);
+      return;
+    }
+
+    if (!entries.length) return;
+
+    for (var i = 0; i < entries.length; i++) entries[i].style.removeProperty('--tier');
+
+    // offsetLeft/Width read layout once per entry without repeated page reflows
+    var measured = entries.map(function (entry) {
+      return { el: entry, left: entry.offsetLeft, right: entry.offsetLeft + entry.offsetWidth };
+    }).sort(function (a, b) { return a.left - b.left; });
+
+    var tiers = [];
+    var maxTier = 0;
+    for (var k = 0; k < measured.length; k++) {
+      var item = measured[k];
+      var tier = 0;
+      while (tiers[tier] && tiers[tier].some(function (occupied) {
+        return item.left < occupied.right + PADDING && item.right > occupied.left - PADDING;
+      })) { tier++; }
+      (tiers[tier] = tiers[tier] || []).push({ left: item.left, right: item.right });
+      item.el.style.setProperty('--tier', String(tier));
+      if (tier > maxTier) maxTier = tier;
+    }
+
+    track.style.minHeight = ((maxTier + 1) * STEP + 60) + 'px';
+    updateSeesaw(entries);
+  }
+
+  // Tilt the seesaw beam according to the average opinion score
+  function updateSeesaw(entries) {
+    var beam = document.getElementById('opinion-seesaw-beam');
+    var label = document.getElementById('opinion-seesaw-label');
+    var seesaw = document.getElementById('opinion-seesaw');
+    if (!beam) return;
+
+    var values = [];
+    for (var i = 0; i < entries.length; i++) {
+      var value = parseFloat(entries[i].getAttribute('data-value'));
+      if (!isNaN(value)) values.push(value);
+    }
+
+    if (!values.length) {
+      beam.style.transform = 'rotate(0deg)';
+      if (label) label.textContent = 'Gesamtmeinung: –';
+      if (seesaw) { seesaw.style.height = SEESAW_BASE_HEIGHT + 'px'; seesaw.style.marginBottom = '2rem'; }
+      return;
+    }
+
+    var sum = values.reduce(function (acc, value) { return acc + value; }, 0);
+    var average = sum / values.length;
+    var tilt = (average - 5) * 4; // degrees, max +-16 for the 1..9 scale
+
+    beam.style.transform = 'rotate(' + tilt.toFixed(1) + 'deg)';
+    if (label) label.textContent = 'Gesamtmeinung: ' + average.toFixed(1) + ' / 9 (' + values.length + ' Stimmen)';
+
+    // Grow the container dynamically so the tilted beam never clips
+    if (seesaw) {
+      var angleRad = Math.abs(tilt) * Math.PI / 180;
+      var drop = (beam.offsetWidth / 2) * Math.sin(angleRad);
+      var base = isPortraitLayout() ? 60 : SEESAW_BASE_HEIGHT;
+      seesaw.style.height = Math.max(base, 18 + drop + 48) + 'px';
+      seesaw.style.marginBottom = Math.max(20, drop * 0.8) + 'px';
+    }
+  }
+
+  // Expose stagger for external callers (e.g. auto reload)
+  window.opinionTemplate = { stagger: stagger };
+
+  // Subtle pointer-based parallax for the stage (desktop only, no reduced motion)
+  function initParallax() {
+    if (prefersReducedMotion() || isPortraitLayout()) return;
+    var track = getTrack();
+    if (!track) return;
+    var stage = track.closest('.opinion-stage');
+    if (!stage) return;
+
+    var rafId = null;
+    var lastEvent = null;
+
+    stage.addEventListener('mousemove', function (event) {
+      lastEvent = event;
+      if (rafId) return;
+      rafId = requestAnimationFrame(function () {
+        rafId = null;
+        if (!lastEvent) return;
+        var rect = stage.getBoundingClientRect();
+        var x = (lastEvent.clientX - rect.left) / rect.width - 0.5;
+        var y = (lastEvent.clientY - rect.top) / rect.height - 0.5;
+        track.style.setProperty('--px', (x * 6).toFixed(2) + 'deg');
+        track.style.setProperty('--py', (y * -4).toFixed(2) + 'deg');
+      });
+    });
+
+    stage.addEventListener('mouseleave', function () {
+      track.style.setProperty('--px', '0deg');
+      track.style.setProperty('--py', '0deg');
+    });
+  }
+
+  // Persist the auto-reload checkbox state
+  window.save = function () {
+    var checkbox = document.getElementById('checkbox1');
+    if (!checkbox) return;
+    try { localStorage.setItem('checkbox1', JSON.stringify(checkbox.checked)); } catch (error) { /* storage unavailable */ }
+    location.reload();
+  };
+
+  // Periodically refresh the entry list without reloading the whole page.
+  // The fetched HTML is parsed and only the track content is swapped in.
+  function setupAutoReload() {
+    var checkbox = document.getElementById('checkbox1');
+    if (!checkbox) return;
+
+    var stored = null;
+    try { stored = JSON.parse(localStorage.getItem('checkbox1')); } catch (error) { stored = null; }
+    if (stored !== null) checkbox.checked = !!stored;
+    if (!checkbox.checked) return;
+
+    setInterval(function () {
+      fetch(location.href, { credentials: 'same-origin' })
+        .then(function (response) { return response.text(); })
+        .then(function (html) {
+          var next = new DOMParser().parseFromString(html, 'text/html').getElementById('data-content');
+          var track = getTrack();
+          if (next && track) {
+            track.innerHTML = next.innerHTML;
+            var api = window.opinionTemplate;
+            if (api && api.stagger) api.stagger();
+          }
+        })
+        .catch(function () { /* network errors are ignored in the next tick */ });
+    }, 4000);
+  }
+
+  // Re-stagger after dynamic content updates
+  function observeTrack() {
+    if (typeof MutationObserver === 'undefined') return;
+    var track = getTrack();
+    if (!track) return;
+    var timer = null;
+    new MutationObserver(function () {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(stagger, 150);
+    }).observe(track, { childList: true });
+  }
+
+  function init() {
+    stagger();
+    initParallax();
+    setupAutoReload();
+    observeTrack();
+  }
+
+  function initSafe() {
+    try { init(); } catch (error) {
+      console.error('opinion template init failed', error);
+    }
+  }
+
+  initSafe();
+  window.addEventListener('load', stagger);
+  window.addEventListener('resize', stagger);
+})();
+</script>
