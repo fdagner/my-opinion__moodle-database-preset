@@ -1,16 +1,25 @@
-<div class="contentmeinung">
-<div class="oben">
-<div style="width:50%;"><span class="obenlinks">Stimme gar nicht zu</span></div><div style="width:50%;text-align:right;color:#fff;"><span class="obenrechts">Stimme voll zu</span></div>
-</div>
-<div class="kasten">
-<div class="linie">
-<div class="querformat">
-<div class="meinung" style="margin-left: calc([[Zustimmung]]0%);">##userpicture##<br />##user##<br>
-[[Kommentar]]<br><div class="nummer" style="margin-left: calc([[Zustimmung]]0% - 9px);"><i class="fa fa-arrow-down"></i></div>
-</div></div>
-</div>
-</div>
+<div class="opinion-stage contentmeinung">
+  <div class="opinion-header">
+    <span class="opinion-label opinion-label--left">Stimme gar nicht zu</span>
+    <span class="opinion-label opinion-label--right">Stimme voll zu</span>
+  </div>
+  <div class="opinion-track" id="opinion-track">
+    <div class="opinion-centerline"></div>
+    <div class="opinion-entry" style="left: calc([[Zustimmung]]0%);" data-value="[[Zustimmung]]">
+      <div class="opinion-position" style="--v: [[Zustimmung]];"><span class="opinion-position__marker"></span></div>
+    <div class="opinion-bubble">
+        <div class="opinion-bubble__text">[[Kommentar]]</div>
+        <span class="opinion-bubble__tail"></span>
+      </div>
+      <div class="opinion-avatar-wrap">
+        <div class="opinion-avatar">##userpicture##</div>
+        <span class="opinion-value" style="--v: [[Zustimmung]];" data-v="[[Zustimmung]]">[[Zustimmung]]</span>
+      </div>
+      <div class="opinion-name">##user##</div>
+    </div>
+  </div>
 </div>
 
-<p>Dein gewählter Wert: [[Zustimmung]]</p>
-<hr ><p style="text-align:right">##disapprove## ##edit## ##delete##</p>
+<p class="opinion-chosen">Dein gewählter Wert: [[Zustimmung]]</p>
+<hr>
+<p class="opinion-actions" style="text-align:right">##actionsmenu##</p>
