@@ -9,8 +9,8 @@
 (function () {
   'use strict';
 
-  /** Vertical spacing (px) between two stacked entries on the same position. */
-  var STEP = 220;
+  /** Minimal vertical gap (px) between stacked entries. */
+  var STACK_GAP = 24;
   /** Horizontal padding (px) used during collision detection. */
   var PADDING = 12;
   /** Base height (px) of the seesaw container with no extra drop. */
@@ -53,7 +53,7 @@
 
     if (isPortraitLayout()) {
       // Portrait layout stacks entries naturally, no staggering needed
-      for (var m = 0; m < entries.length; m++) entries[m].style.removeProperty('--tier');
+      for (var m = 0; m < entries.length; m++) entries[m].style.removeProperty('--stack-bottom');
       track.style.minHeight = '';
       updateSeesaw(entries);
       return;
@@ -61,27 +61,63 @@
 
     if (!entries.length) return;
 
-    for (var i = 0; i < entries.length; i++) entries[i].style.removeProperty('--tier');
+    for (var i = 0; i < entries.length; i++) entries[i].style.removeProperty('--stack-bottom');
 
-    // offsetLeft/Width read layout once per entry without repeated page reflows
+    // Measure each entry once: horizontal extent (offsetLeft/Width) and height
     var measured = entries.map(function (entry) {
-      return { el: entry, left: entry.offsetLeft, right: entry.offsetLeft + entry.offsetWidth };
+      return {
+        el: entry,
+        left: entry.offsetLeft,
+        right: entry.offsetLeft + entry.offsetWidth,
+        height: entry.offsetHeight,
+        stackBottom: 0,
+        top: 0
+      };
     }).sort(function (a, b) { return a.left - b.left; });
 
-    var tiers = [];
-    var maxTier = 0;
+    // Stack x-overlapping entries on top of each other (variable heights).
+    // Each entry is assigned to the LOWEST level whose entries do not overlap
+    // it horizontally, so non-colliding entries (e.g. 1 and 9) share the
+    // bottom row instead of building one tall tower.
+    var levels = [];
     for (var k = 0; k < measured.length; k++) {
       var item = measured[k];
-      var tier = 0;
-      while (tiers[tier] && tiers[tier].some(function (occupied) {
-        return item.left < occupied.right + PADDING && item.right > occupied.left - PADDING;
-      })) { tier++; }
-      (tiers[tier] = tiers[tier] || []).push({ left: item.left, right: item.right });
-      item.el.style.setProperty('--tier', String(tier));
-      if (tier > maxTier) maxTier = tier;
+      var level = 0;
+      while (true) {
+        var band = levels[level];
+        if (!band) { band = levels[level] = []; break; }
+        var conflict = false;
+        for (var j = 0; j < band.length; j++) {
+          var occupied = band[j];
+          if (item.left < occupied.right + PADDING && item.right > occupied.left - PADDING) {
+            conflict = true;
+            break;
+          }
+        }
+        if (!conflict) break;
+        level++;
+      }
+      levels[level].push(item);
     }
 
-    track.style.minHeight = ((maxTier + 1) * STEP + 60) + 'px';
+    // Place each level as a horizontal band above the previous ones
+    var topmost = 0;
+    var bandBase = 0;
+    for (var l = 0; l < levels.length; l++) {
+      var band = levels[l];
+      var bandHeight = 0;
+      for (var b = 0; b < band.length; b++) {
+        if (band[b].height > bandHeight) bandHeight = band[b].height;
+      }
+      for (var e = 0; e < band.length; e++) {
+        band[e].el.style.setProperty('--stack-bottom', bandBase + 'px');
+        var bandTop = bandBase + band[e].height;
+        if (bandTop > topmost) topmost = bandTop;
+      }
+      bandBase += bandHeight + STACK_GAP;
+    }
+
+    track.style.minHeight = (topmost + 60) + 'px';
     updateSeesaw(entries);
   }
 
