@@ -75,22 +75,46 @@
       };
     }).sort(function (a, b) { return a.left - b.left; });
 
-    // Stack x-overlapping entries on top of each other (variable heights)
-    var placed = [];
-    var topmost = 0;
+    // Stack x-overlapping entries on top of each other (variable heights).
+    // Each entry is assigned to the LOWEST level whose entries do not overlap
+    // it horizontally, so non-colliding entries (e.g. 1 and 9) share the
+    // bottom row instead of building one tall tower.
+    var levels = [];
     for (var k = 0; k < measured.length; k++) {
       var item = measured[k];
-      for (var j = 0; j < placed.length; j++) {
-        var occupied = placed[j];
-        var overlapsX = item.left < occupied.right + PADDING && item.right > occupied.left - PADDING;
-        if (overlapsX && item.stackBottom < occupied.top + STACK_GAP) {
-          item.stackBottom = occupied.top + STACK_GAP;
+      var level = 0;
+      while (true) {
+        var band = levels[level];
+        if (!band) { band = levels[level] = []; break; }
+        var conflict = false;
+        for (var j = 0; j < band.length; j++) {
+          var occupied = band[j];
+          if (item.left < occupied.right + PADDING && item.right > occupied.left - PADDING) {
+            conflict = true;
+            break;
+          }
         }
+        if (!conflict) break;
+        level++;
       }
-      item.top = item.stackBottom + item.height;
-      placed.push(item);
-      if (item.top > topmost) topmost = item.top;
-      item.el.style.setProperty('--stack-bottom', item.stackBottom + 'px');
+      levels[level].push(item);
+    }
+
+    // Place each level as a horizontal band above the previous ones
+    var topmost = 0;
+    var bandBase = 0;
+    for (var l = 0; l < levels.length; l++) {
+      var band = levels[l];
+      var bandHeight = 0;
+      for (var b = 0; b < band.length; b++) {
+        if (band[b].height > bandHeight) bandHeight = band[b].height;
+      }
+      for (var e = 0; e < band.length; e++) {
+        band[e].el.style.setProperty('--stack-bottom', bandBase + 'px');
+        var bandTop = bandBase + band[e].height;
+        if (bandTop > topmost) topmost = bandTop;
+      }
+      bandBase += bandHeight + STACK_GAP;
     }
 
     track.style.minHeight = (topmost + 60) + 'px';
